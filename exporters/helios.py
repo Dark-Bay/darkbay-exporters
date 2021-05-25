@@ -32,6 +32,8 @@ class HeliosCollector(object):
         self.host = host
         self.proxies = proxies
         self.baseurl = self._baseurl % (protocol, host)
+        self.ldms = {}
+        self.ldm_swaps = 0
 
     def get(self):
         return requests.get(self.baseurl, proxies=self.proxies).json()
@@ -54,13 +56,25 @@ class HeliosCollector(object):
                 "helios_test_pattern", 'Test Pattern',
                 labels=['processor', 'type']),
             'reboots': CounterMetricFamily(
-                "helios_reboots", 'Help text',
+                "helios_reboots", 'Reboots',
+                labels=['processor']),
+            'swaps': CounterMetricFamily(
+                "helios_ldm_swaps", 'Changes in LDMs',
                 labels=['processor'])
         }
         data = self.get()
         for mac, details in data['dev']['receivers'].items():
             for part, val in details['temps'].items():
                 metrics['receiver_temp'].add_metric([self.host, mac, part], val)
+            prev_ldms = self.ldms.get(mac)
+            ldms = set()
+            for ldm_id, ldm_info in details['ldms'].items():
+                ldms.add(ldm_info['info']['serial'])
+
+            if prev_ldms:
+                for _ in ldms:
+                    if _ not in prev_ldms:
+                        self.ldm_swaps += 1
 
         for part, val in data['dev']['ingest']['temps'].items():
             metrics['temp'].add_metric([self.host, part], val)
@@ -69,6 +83,7 @@ class HeliosCollector(object):
             metrics['volts'].add_metric([self.host, part], val)
 
         metrics['reboots'].add_metric([self.host], data['dev']['ingest']['counters']['reboots'])
+        metrics['swaps'].add_metric([self.host], self.ldm_swaps)
         metrics['version'].add_metric([self.host, data['sys']['info']['version']['app']], 1)
         metrics['test_pattern_enabled'].add_metric(
             [self.host, data['dev']['ingest']['testPattern']['type']],
