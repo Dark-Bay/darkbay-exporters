@@ -24,19 +24,23 @@ PROXIES = 'PROXIES'
 DEFAULT_PROTOCOL = 'http'
 DEFAULT_PORT = 9091
 _name_ = 'Helios Exporter'
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 
 class HeliosCollector(object):
     _baseurl = "%s://%s/api/v1/data/"
 
-    def __init__(self, host, proxies=None, protocol=DEFAULT_PROTOCOL):
+    def __init__(self, host, proxies=None, protocol=DEFAULT_PROTOCOL, dummy=None):
         self.host = host
         self.proxies = proxies
         self.baseurl = self._baseurl % (protocol, host)
         self.ldms = {}
         self.ldm_swaps = 0
+        self.dummy = dummy
 
     def get(self):
+        if self.dummy:
+            with open(self.dummy, 'rb') as fh:
+                return json.load(fh)
         return requests.get(self.baseurl, proxies=self.proxies).json()
 
     def collect(self):
@@ -112,6 +116,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Helios exporter')
     parser.add_argument('processor', help='IP or name of helios processor')
     parser.add_argument('-d', '--debug', action='store_true', help='Enable debug logging')
+    parser.add_argument('--dummy', type=str, help='Dummy file instead of host' )
     parser.add_argument('-p', '--port', type=int, default=DEFAULT_PORT,
                         help='port to server metrics (default: %s' % DEFAULT_PORT)
     parser.add_argument('--protocol', default=DEFAULT_PROTOCOL,
@@ -121,13 +126,15 @@ def parse_args():
 
 def main():
     args = parse_args()
+    if args.debug:
+        LOG.setLevel(logging.DEBUG)
     LOG.info('Starting %s (v%s) on port %s', _name_, __version__, args.port)
     start_http_server(args.port)
     proxies = None
     if PROXIES in os.environ:
         proxies = json.loads(os.environ[PROXIES])
         LOG.info("Using proxies from Environment: %s", proxies)
-    REGISTRY.register(HeliosCollector(args.processor, proxies, args.protocol))
+    REGISTRY.register(HeliosCollector(args.processor, proxies, args.protocol, dummy=args.dummy))
     while True:
         time.sleep(1)
 

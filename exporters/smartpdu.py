@@ -71,6 +71,8 @@ def parse_args():
 
 def main():
     args = parse_args()
+    if args.debug:
+        LOG.setLevel(logging.DEBUG)
     LOG.info('Starting %s (v%s) on port %s', _name_, __version__, args.port)
     start_http_server(args.port)
 
