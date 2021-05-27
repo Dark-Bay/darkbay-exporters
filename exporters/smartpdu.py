@@ -17,7 +17,7 @@ LOG.handlers[-1].setFormatter(logging.Formatter(logging.BASIC_FORMAT))
 PROXIES = 'PROXIES'
 DEFAULT_PROTOCOL = 'http'
 DEFAULT_PORT = 9091
-
+__version__ = '0.1.0'
 
 class SmartPDUCollector(object):
     _baseurl = "%s://%s:8080/api/getcurrentpduvalues"
@@ -37,6 +37,8 @@ class SmartPDUCollector(object):
                                       labels=['name', 'phase'])
         smart_pdu_frequency = GaugeMetricFamily("smart_pdu_frequency", 'Frequency from smartPDU',
                                               labels=['name'])
+        exporter_version = GaugeMetricFamily("smart_pdu_exporter_version", 'Frequency from smartPDU',
+                                              labels=['version'])
 
         data = self.get()
         name = data['smartPDU']['config']['name']
@@ -47,10 +49,12 @@ class SmartPDUCollector(object):
                     smart_pdu_current.add_metric([name, key], value[0])
         value = data['smartPDU']['mainInputValues'][0]['freq'][0]
         smart_pdu_frequency.add_metric([name], value)
+        exporter_version.add_metric([__version__], 1)
 
         yield smart_pdu_voltage
         yield smart_pdu_current
         yield smart_pdu_frequency
+        yield exporter_version
 
 
 def parse_args():

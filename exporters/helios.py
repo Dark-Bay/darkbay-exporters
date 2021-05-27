@@ -23,7 +23,7 @@ LOG.handlers[-1].setFormatter(logging.Formatter(logging.BASIC_FORMAT))
 PROXIES = 'PROXIES'
 DEFAULT_PROTOCOL = 'http'
 DEFAULT_PORT = 9091
-
+__version__ = '0.1.0'
 
 class HeliosCollector(object):
     _baseurl = "%s://%s/api/v1/data/"
@@ -60,7 +60,11 @@ class HeliosCollector(object):
                 labels=['processor']),
             'swaps': CounterMetricFamily(
                 "helios_ldm_swaps", 'Changes in LDMs',
-                labels=['processor'])
+                labels=['processor']),
+            'exporter_version': GaugeMetricFamily(
+                "helios_exporter_version", 'Current Exporter Version',
+                labels=['version']
+            )
         }
         data = self.get()
         for mac, details in data['dev']['receivers'].items():
@@ -86,6 +90,7 @@ class HeliosCollector(object):
         metrics['reboots'].add_metric([self.host], data['dev']['ingest']['counters']['reboots'])
         metrics['swaps'].add_metric([self.host], self.ldm_swaps)
         metrics['version'].add_metric([self.host, data['sys']['info']['version']['app']], 1)
+        metrics['exporter_version'].add_metric([__version__], 1)
         metrics['test_pattern_enabled'].add_metric(
             [self.host, data['dev']['ingest']['testPattern']['type']],
             int(data['dev']['ingest']['testPattern']['enabled'])
