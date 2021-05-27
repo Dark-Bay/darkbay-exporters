@@ -17,8 +17,8 @@ LOG.handlers[-1].setFormatter(logging.Formatter(logging.BASIC_FORMAT))
 PROXIES = 'PROXIES'
 DEFAULT_PROTOCOL = 'http'
 DEFAULT_PORT = 9091
-__name__ = 'SmartPDU Exporter'
-__version__ = '0.1.0'
+_name_ = 'SmartPDU Exporter'
+__version__ = '0.1.1'
 
 class SmartPDUCollector(object):
     _baseurl = "%s://%s:8080/api/getcurrentpduvalues"
@@ -71,7 +71,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    LOG.info('Starting %s (v%s) on port %s', __name__, __version__, args.port)
+    LOG.info('Starting %s (v%s) on port %s', _name_, __version__, args.port)
     start_http_server(args.port)
 
     proxies = None

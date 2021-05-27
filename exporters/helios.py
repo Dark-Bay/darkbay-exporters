@@ -23,8 +23,8 @@ LOG.handlers[-1].setFormatter(logging.Formatter(logging.BASIC_FORMAT))
 PROXIES = 'PROXIES'
 DEFAULT_PROTOCOL = 'http'
 DEFAULT_PORT = 9091
-__name__ = 'Helios Exporter'
-__version__ = '0.1.1'
+_name_ = 'Helios Exporter'
+__version__ = '0.1.2'
 
 class HeliosCollector(object):
     _baseurl = "%s://%s/api/v1/data/"
@@ -82,7 +82,7 @@ class HeliosCollector(object):
                     if _ not in prev_ldms:
                         new_swaps += 1
                         LOG.info("LDM (%s) is new to %s", _, mac)
-            if new_swaps == 0:
+            if new_swaps == 0 and prev_ldms:
                 new_swaps = len(ldms - prev_ldms)
                 LOG.info('See a change in LDM len by %s', new_swaps)
 
@@ -120,7 +120,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    LOG.info('Starting %s (v%s) on port %s', __name__, __version__, args.port)
+    LOG.info('Starting %s (v%s) on port %s', _name_, __version__, args.port)
     start_http_server(args.port)
     proxies = None
     if PROXIES in os.environ:
