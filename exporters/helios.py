@@ -16,14 +16,15 @@ from prometheus_client import start_http_server
 from prometheus_client.core import GaugeMetricFamily, REGISTRY, CounterMetricFamily
 
 LOG = logging.getLogger('darkbay')
-LOG.setLevel(logging.WARNING)
+LOG.setLevel(logging.INFO)
 LOG.addHandler(logging.StreamHandler())
 LOG.handlers[-1].setFormatter(logging.Formatter(logging.BASIC_FORMAT))
 
 PROXIES = 'PROXIES'
 DEFAULT_PROTOCOL = 'http'
 DEFAULT_PORT = 9091
-__version__ = '0.1.0'
+__name__ = 'Helios Exporter'
+__version__ = '0.1.1'
 
 class HeliosCollector(object):
     _baseurl = "%s://%s/api/v1/data/"
@@ -75,10 +76,17 @@ class HeliosCollector(object):
             ldms = set()
             for ldm_id, ldm_info in details['ldms'].items():
                 ldms.add(ldm_info['info']['serial'])
+            new_swaps = 0
             if prev_ldms:
                 for _ in ldms:
                     if _ not in prev_ldms:
-                        self.ldm_swaps += 1
+                        new_swaps += 1
+                        LOG.info("LDM (%s) is new to %s", _, mac)
+            if new_swaps == 0:
+                new_swaps = len(ldms - prev_ldms)
+                LOG.info('See a change in LDM len by %s', new_swaps)
+
+            self.ldm_swaps += new_swaps
             self.ldms[mac] = ldms
 
         for part, val in data['dev']['ingest']['temps'].items():
@@ -102,6 +110,7 @@ class HeliosCollector(object):
 def parse_args():
     parser = argparse.ArgumentParser(description='Helios exporter')
     parser.add_argument('processor', help='IP or name of helios processor')
+    parser.add_argument('-d', '--debug', action='store_true', help='Enable debug logging')
     parser.add_argument('-p', '--port', type=int, default=DEFAULT_PORT,
                         help='port to server metrics (default: %s' % DEFAULT_PORT)
     parser.add_argument('--protocol', default=DEFAULT_PROTOCOL,
@@ -111,6 +120,7 @@ def parse_args():
 
 def main():
     args = parse_args()
+    LOG.info('Starting %s (v%s) on port %s', __name__, __version__, args.port)
     start_http_server(args.port)
     proxies = None
     if PROXIES in os.environ:
