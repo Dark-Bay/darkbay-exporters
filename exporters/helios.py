@@ -24,7 +24,7 @@ PROXIES = 'PROXIES'
 DEFAULT_PROTOCOL = 'http'
 DEFAULT_PORT = 9091
 _name_ = 'Helios Exporter'
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 class HeliosCollector(object):
     _baseurl = "%s://%s/api/v1/data/"
@@ -84,7 +84,8 @@ class HeliosCollector(object):
                         LOG.info("LDM (%s) is new to %s", _, mac)
             if new_swaps == 0 and prev_ldms:
                 new_swaps = len(ldms - prev_ldms)
-                LOG.info('See a change in LDM len by %s', new_swaps)
+                if new_swaps > 0:
+                    LOG.info('See a change in LDM len by %s', new_swaps)
 
             self.ldm_swaps += new_swaps
             self.ldms[mac] = ldms
