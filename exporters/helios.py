@@ -66,15 +66,16 @@ class HeliosCollector(object):
         for mac, details in data['dev']['receivers'].items():
             for part, val in details['temps'].items():
                 metrics['receiver_temp'].add_metric([self.host, mac, part], val)
+
             prev_ldms = self.ldms.get(mac)
             ldms = set()
             for ldm_id, ldm_info in details['ldms'].items():
                 ldms.add(ldm_info['info']['serial'])
-
             if prev_ldms:
                 for _ in ldms:
                     if _ not in prev_ldms:
                         self.ldm_swaps += 1
+            self.ldms[mac] = ldms
 
         for part, val in data['dev']['ingest']['temps'].items():
             metrics['temp'].add_metric([self.host, part], val)
